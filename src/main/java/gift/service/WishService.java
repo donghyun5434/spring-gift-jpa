@@ -1,5 +1,6 @@
 package gift.service;
 
+import gift.constants.Messages;
 import gift.domain.Member;
 import gift.domain.Product;
 import gift.domain.Wish;
@@ -12,6 +13,7 @@ import gift.repository.ProductRepository;
 import gift.repository.WishRepository;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,9 +24,6 @@ public class WishService {
     private final WishRepository wishRepository;
     private final MemberRepository memberRepository;
     private final ProductRepository productRepository;
-
-    private final String NOT_FOUND_MEMBER_BY_EMAIL_MESSAGE = "해당 email을 가진 member가 존재하지 않습니다";
-    private final String NOT_FOUND_WISH_MESSAGE = "해당 wish가 존재하지 않습니다.";
 
     public WishService(WishRepository wishRepository, MemberRepository memberRepository,
         ProductRepository productRepository) {
@@ -39,29 +38,27 @@ public class WishService {
         wishRepository.save(new Wish(member, product, wishRequestDto.getQuantity()));
     }
 
+    // 모든 wish 반환
     public List<WishResponseDto> findByEmail(String memberEmail) {
         Member member = memberRepository.findByEmail(memberEmail)
-            .orElseThrow(() -> new MemberNotFoundException(NOT_FOUND_MEMBER_BY_EMAIL_MESSAGE));
+            .orElseThrow(() -> new MemberNotFoundException(Messages.NOT_FOUND_MEMBER_BY_EMAIL_MESSAGE));
 
         List<Wish> wishes = wishRepository.findByMemberId(member.getId())
-            .orElseThrow(() -> new WishNotFoundException(NOT_FOUND_WISH_MESSAGE));
+            .orElseThrow(() -> new WishNotFoundException(Messages.NOT_FOUND_WISH_MESSAGE));
 
         return wishes.stream()
             .map(this::convertToWishDto)
             .collect(Collectors.toList());
     }
 
-    private WishResponseDto convertToWishDto(Wish wish) {
-        return new WishResponseDto(
-            wish.getId(),
-            wish.getMember().getId(),
-            wish.getProduct().getId(),
-            wish.getQuantity()
-        );
+    // 페이지네이션을 이용하여 wish 반환
+    public  Page<WishResponseDto> findByEmailPage(String memberEmail, Pageable pageable){
+        Member member = memberRepository.findByEmail(memberEmail)
+            .orElseThrow(() -> new MemberNotFoundException(Messages.NOT_FOUND_MEMBER_BY_EMAIL_MESSAGE));
+        return wishRepository.findAllByMemberIdOrderByCreatedAt(member.getId(), pageable).map(this::convertToWishDto);
     }
-
     @Transactional
-    public void deleteWish(String memberEmail, Long productId) {
+    public void deleteWish(String memberEmail) {
         Member member = memberRepository.findByEmail(memberEmail).get();
         wishRepository.deleteById(member.getId());
     }
@@ -73,12 +70,12 @@ public class WishService {
         wishRepository.save(updateWish);
     }
 
-    public  List<WishResponseDto> findByEmailPage(String memberEmail, Pageable pageable){
-        Member member = memberRepository.findByEmail(memberEmail)
-            .orElseThrow(() -> new MemberNotFoundException(NOT_FOUND_MEMBER_BY_EMAIL_MESSAGE));
-        List<Wish> wishes = wishRepository.findAllByMemberIdOrderByCreatedAt(member.getId(), pageable);
-        return wishes.stream()
-            .map(this::convertToWishDto)
-            .collect(Collectors.toList());
+    private WishResponseDto convertToWishDto(Wish wish) {
+        return new WishResponseDto(
+            wish.getId(),
+            wish.getMember().getId(),
+            wish.getProduct().getId(),
+            wish.getQuantity()
+        );
     }
 }

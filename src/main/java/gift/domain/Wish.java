@@ -9,6 +9,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import org.springframework.data.annotation.CreatedDate;
 
 @Entity
 @Table(name="wishes")
@@ -27,7 +28,8 @@ public class Wish {
     @Column(name = "quantity", nullable = false)
     private int quantity;
 
-    @Column(name="created_at", nullable = false)
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     protected Wish () {

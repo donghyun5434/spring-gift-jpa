@@ -1,7 +1,7 @@
 package gift.repository;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import gift.domain.Member;
 import gift.repository.fixture.MemberFixture;
